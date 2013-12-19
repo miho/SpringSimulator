@@ -43,10 +43,11 @@ public class SpringSimulation {
     }
 
     public void start(double dt) {
-//        new Thread(() -> {
-//        start_();
-//        }).start();
-
+        
+        if (isRunning()) {
+            throw new RuntimeException("Stop simulation before restarting it!");
+        }
+                
         boolean isViewRegistered = root != null;
 
         if (isViewRegistered) {
@@ -56,6 +57,14 @@ public class SpringSimulation {
                 startNonVisual(dt);
             }).start();
         }
+    }
+
+    public void stop() {
+        done = true;
+    }
+
+    public boolean isRunning() {
+        return !done;
     }
 
     private void startNonVisual(double dt) {
@@ -80,6 +89,8 @@ public class SpringSimulation {
 
             @Override
             public void handle(long now) {
+                
+                // thanks to http://gafferongames.com/game-physics/fix-your-timestep/
 
                 // measure elapsed time between last and current pulse (frame)
                 double frameDuration = (now - lastTimeStamp) / 1e9;
@@ -93,6 +104,7 @@ public class SpringSimulation {
                 // add elapsed time to remaining simulation interval
                 remainingSimulationTime += frameDuration;
 
+                // copy current state to prev state
                 System.arraycopy(y, 0, yPrev, 0, yPrev.length);
 
                 // simulate remaining interval
@@ -167,12 +179,6 @@ public class SpringSimulation {
         yProperty.set(yPos);
     }
 }
-
-
-
-
-
-
 
 //    public void testTransition() {
 //        timeline = new Timeline(
