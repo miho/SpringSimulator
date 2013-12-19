@@ -34,45 +34,43 @@ import org.apache.commons.math3.ode.sampling.StepInterpolator;
 public class SpringSimulation {
 
     private double[] y;
-    private double[] yCurrent;
+    private double[] yPrev;
     private FirstOrderIntegrator integrator;
     private SpringODE ode;
     private Pane root;
-    private double t = 0;
-    private double tPlus1 = 0;
-    private long lastTimeStamp;
-    private Thread lastThread;
 
     private final DoubleProperty xProperty = new SimpleDoubleProperty();
     private final DoubleProperty yProperty = new SimpleDoubleProperty();
 
     private Timeline timeline;
 
+    private long lastTimeStamp;
+
+    private double remainingSimulationTime;
+    private double dt = 0.01;
+    private double t = 0;
+    private double[] interpolatedY;
+    private boolean done;
+
     public SpringSimulation() {
         ode = new SpringODE();
     }
 
     public void start() {
-        new Thread(() -> {
-            start_();
-        }).start();
+//        new Thread(() -> {
+        start_();
+//        }).start();
     }
 
     public void start_() {
 
-//        testTransition();
-//
-//        if (true) {
-//            return;
-//        }
-
-        integrator = new DormandPrince853Integrator(1e-6, 1e-4, 1e-3, 1e-3);
+//        integrator = new DormandPrince853Integrator(1e-6, 1e-4, 1e-3, 1e-3);
 //        integrator = new EulerIntegrator(1e-4);
 
-//        integrator = new ClassicalRungeKuttaIntegrator(1e-4);
-//        integrator.setMaxEvaluations(1000000);
+        integrator = new ClassicalRungeKuttaIntegrator(dt);
+
         y = new double[]{700, 800, 0, 0}; // initial state
-        yCurrent = new double[y.length];
+        yPrev = new double[y.length];
 
         boolean isViewRegistered = root != null;
 
@@ -80,43 +78,104 @@ public class SpringSimulation {
             throw new IllegalStateException("");
         }
 
-        AnimationTimer timer = new AnimationTimer() {
+        interpolatedY = new double[y.length];
+
+        AnimationTimer frameListener = new AnimationTimer() {
 
             @Override
             public void handle(long now) {
-
-                double dt = (now - lastTimeStamp) / 1e9;
-
-//                System.out.println("dt: " + dt);
-                tPlus1 = t + dt;
-
-                if (lastTimeStamp > 0) {
-//                            System.out.println("update: [" + t + ", " + tPlus1 + "]");
-                    integrator.integrate(ode, t, y, tPlus1, y);
-                    t = tPlus1;
-                }
+                double frameDuration = (now - lastTimeStamp) / 1e9;
                 lastTimeStamp = now;
-                
-                
-//
-                
-//                if (lastThread == null || (!lastThread.isAlive() && tPlus1 - t > 0.5)) {
-//                    lastThread = new Thread(() -> {
-//                        if (lastTimeStamp > 0) {
-//
-////                            System.out.println("update: [" + t + ", " + tPlus1 + "]");
-//                            integrator.integrate(ode, t, y, tPlus1, y);
-//                            t = tPlus1;
-//                        }
-//
-//                        lastTimeStamp = now;
-//                    });
-//                    lastThread.start();
-//                }
-                updateView();
+
+                if (frameDuration > 1) {
+                    frameDuration = 1;
+                }
+
+                remainingSimulationTime += frameDuration;
+
+                System.arraycopy(y, 0, yPrev, 0, yPrev.length);
+
+                while (remainingSimulationTime >= dt) {
+
+                    double tPlusDt = t + dt;
+
+                    integrator.integrate(ode, t, y, tPlusDt, y);
+
+                    remainingSimulationTime -= dt;
+
+                    t = tPlusDt;
+
+                }
+
+                // interpolate state
+                double alpha = remainingSimulationTime / dt;
+
+                // set interpolated state
+                for (int i = 0; i < y.length; i++) {
+                    interpolatedY[i] = y[i] * alpha + yPrev[i] * (1.0 - alpha);
+                }
+
+                updateView(interpolatedY);
             }
         };
 
+        frameListener.start();
+
+//        testTransition();
+//
+//        if (true) {
+//            return;
+//        }
+//        integrator = new DormandPrince853Integrator(1e-6, 1e-4, 1e-3, 1e-3);
+////        integrator = new EulerIntegrator(1e-4);
+//
+////        integrator = new ClassicalRungeKuttaIntegrator(1e-4);
+////        integrator.setMaxEvaluations(1000000);
+//        y = new double[]{700, 800, 0, 0}; // initial state
+//        yPrev = new double[y.length];
+//
+//        boolean isViewRegistered = root != null;
+//
+//        if (!isViewRegistered) {
+//            throw new IllegalStateException("");
+//        }
+//        AnimationTimer timer = new AnimationTimer() {
+//
+//            @Override
+//            public void handle(long now) {
+//
+//                double dt = (now - lastTimeStamp) / 1e9;
+//
+////                System.out.println("dt: " + dt);
+//                tPlus1 = t + dt;
+//
+//                if (lastTimeStamp > 0) {
+////                            System.out.println("update: [" + t + ", " + tPlus1 + "]");
+//                    integrator.integrate(ode, t, y, tPlus1, y);
+//                    t = tPlus1;
+//                }
+//                lastTimeStamp = now;
+//                
+//                
+////
+//                
+////                if (lastThread == null || (!lastThread.isAlive() && tPlus1 - t > 0.5)) {
+////                    lastThread = new Thread(() -> {
+////                        if (lastTimeStamp > 0) {
+////
+//////                            System.out.println("update: [" + t + ", " + tPlus1 + "]");
+////                            integrator.integrate(ode, t, y, tPlus1, y);
+////                            t = tPlus1;
+////                        }
+////
+////                        lastTimeStamp = now;
+////                    });
+////                    lastThread.start();
+////                }
+//                updateView();
+//            }
+//        };
+//
 //        StepHandler stepHandler = new StepHandler() {
 //            @Override
 //            public void init(double t0, double[] y0, double t) {
@@ -132,7 +191,7 @@ public class SpringSimulation {
 //            }
 //        };
 //        integrator.addStepHandler(stepHandler);
-        timer.start();
+//        timer.start();
     }
 
     public void setView(Pane root) {
@@ -168,20 +227,18 @@ public class SpringSimulation {
         blob.layoutYProperty().bind(yProperty);
     }
 
-    private void updateView() {
+    private void updateView(double[] state) {
 //        xProperty.set(yCurrent[0]);
 //        yProperty.set(yCurrent[1]);
 
 //        xProperty.set(y[0]);
 //        yProperty.set(y[1]);
-        
-        double xPos = y[0];
-        double yPos = y[1];
+        double xPos = state[0];
+        double yPos = state[1];
 
         xProperty.set(xPos);
         yProperty.set(yPos);
-        
-        
+
 //        if (timeline != null) {
 //            timeline.stop();
 //        }
@@ -198,7 +255,6 @@ public class SpringSimulation {
 //
 ////        timeline.
 //        timeline.play();
-
     }
 
     public void testTransition() {
