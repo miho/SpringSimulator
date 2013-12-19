@@ -32,7 +32,7 @@ public class Main extends Application {
         
         simulation.setView(root);
         
-        simulation.start(0.005);
+        simulation.start(0.01);
         
         System.out.println(" -> running");
         
