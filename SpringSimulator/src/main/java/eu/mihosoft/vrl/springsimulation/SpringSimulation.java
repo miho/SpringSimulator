@@ -41,7 +41,7 @@ public class SpringSimulation {
 
     private double remainingSimulationTime;
 
-    private double t = 0;
+    private double time = 0;
     private double[] interpolatedY;
     private boolean done = true;
 
@@ -124,11 +124,11 @@ public class SpringSimulation {
                 // simulate remaining interval
                 while (remainingSimulationTime >= dt) {
 
-                    double tPlusDt = t + dt;
+                    double tPlusDt = time + dt;
 
                     // integrate
                     try {
-                        integrator.integrate(ode, t * 10, y, tPlusDt * 10, y);
+                        integrator.integrate(ode, time * 10, y, tPlusDt * 10, y);
 
                     } catch (Exception ex) {
                         ex.printStackTrace(System.err);
@@ -137,7 +137,7 @@ public class SpringSimulation {
                     remainingSimulationTime -= dt;
 
                     // update t
-                    t = tPlusDt;
+                    time = tPlusDt;
                 }
 
                 // interpolate state
