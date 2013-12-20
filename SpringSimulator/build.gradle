@@ -23,6 +23,10 @@ repositories {
     // You may define additional repositories, or even remove "mavenCentral()".
     // Read more about repositories here:
     //   http://www.gradle.org/docs/current/userguide/dependency_management.html#sec:repositories
+    
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
 }
 
 dependencies {
@@ -33,6 +37,8 @@ dependencies {
     
     compile(group: 'org.apache.commons', name: 'commons-math3', version: '3.2')
     compile(group: 'org.apache.commons', name: 'commons-math3', version: '3.2', classifier: 'sources')
+    
+    compile ( 'eu.mihosoft.vrl.workflow:vworkflows-fx:0.1-r2-SNAPSHOT' ) { changing = true }
 }
 
 // finding jfxrt.jar for JDK 7 as we depend on binding API
