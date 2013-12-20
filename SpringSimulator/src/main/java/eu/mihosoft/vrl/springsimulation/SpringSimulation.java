@@ -90,20 +90,12 @@ public class SpringSimulation {
 
         interpolatedY = new double[y.length];
 
-        ode.uxProperty().addListener(new ChangeListener<Number>() {
-
-            @Override
-            public void changed(ObservableValue<? extends Number> ov, Number t, Number t1) {
-                y[0] = t1.doubleValue();
-            }
+        ode.uxProperty().addListener((ObservableValue<? extends Number> ov, Number oldValue, Number newValue) -> {
+            y[0] = newValue.doubleValue();
         });
 
-        ode.uyProperty().addListener(new ChangeListener<Number>() {
-
-            @Override
-            public void changed(ObservableValue<? extends Number> ov, Number t, Number t1) {
-                y[1] = t1.doubleValue();
-            }
+        ode.uyProperty().addListener((ObservableValue<? extends Number> ov, Number oldValue, Number newValue) -> {
+            y[1] = newValue.doubleValue();
         });
 
         // create frame listener 
@@ -173,7 +165,7 @@ public class SpringSimulation {
         anchor.setLayoutY(ode.getTy());
         anchor.setFill(Color.WHITE);
 
-        Circle blob = new Circle(5);
+        Circle blob = new Circle(7);
         blob.setLayoutX(0);
         blob.setLayoutY(0);
         blob.setFill(Color.WHITE);
@@ -202,29 +194,20 @@ public class SpringSimulation {
         blob.layoutXProperty().bind(xProperty);
         blob.layoutYProperty().bind(yProperty);
 
-        blob.addEventHandler(MouseEvent.MOUSE_PRESSED, new EventHandler<MouseEvent>() {
-
-            @Override
-            public void handle(MouseEvent t) {
-
-                blob.layoutXProperty().unbind();
-                blob.layoutYProperty().unbind();
-
-                ode.uxProperty().bind(blob.layoutXProperty());
-                ode.uyProperty().bind(blob.layoutYProperty());
-            }
+        blob.addEventHandler(MouseEvent.MOUSE_PRESSED, (MouseEvent t) -> {
+            blob.layoutXProperty().unbind();
+            blob.layoutYProperty().unbind();
+            
+            ode.uxProperty().bind(blob.layoutXProperty());
+            ode.uyProperty().bind(blob.layoutYProperty());
         });
 
-        blob.addEventHandler(MouseEvent.MOUSE_RELEASED, new EventHandler<MouseEvent>() {
-
-            @Override
-            public void handle(MouseEvent t) {
-                ode.uxProperty().unbind();
-                ode.uyProperty().unbind();
-
-                blob.layoutXProperty().bind(xProperty);
-                blob.layoutYProperty().bind(yProperty);
-            }
+        blob.addEventHandler(MouseEvent.MOUSE_RELEASED, (MouseEvent t) -> {
+            ode.uxProperty().unbind();
+            ode.uyProperty().unbind();
+            
+            blob.layoutXProperty().bind(xProperty);
+            blob.layoutYProperty().bind(yProperty);
         });
     }
 
